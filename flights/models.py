@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 
 class Passenger(models.Model):
@@ -50,7 +51,7 @@ class Flight(models.Model):
 
     def check_if_flight_has_minimum_duration(self):
         if self.landing - self.start < timezone.timedelta(minutes=30):
-            raise ValidationError("Lot nie może trwać < 30 minut")
+            raise ValidationError(_("Lot nie może trwać < 30 minut"))
 
     def check_if_airplane_not_already_assigned(self):
         if Flight.objects.filter(airplane=self.airplane,
@@ -59,11 +60,11 @@ class Flight(models.Model):
                 Flight.objects.filter(airplane=self.airplane,
                                       start__lte=self.start,
                                       landing__gte=self.start).count() > 1:
-            raise ValidationError("Airplane can't simultaneously be on two flights")
+            raise ValidationError(_("Airplane can't simultaneously be on two flights"))
 
     def check_airplane_not_too_much_flights_per_day(self):
         if Flight.objects.filter(airplane=self.airplane).count() > 4:
-            raise ValidationError("Airplane can only be assigned to maximum 4 flights per day")
+            raise ValidationError(_("Airplane can only be assigned to maximum 4 flights per day"))
 
     def __str__(self):
         return "Lot nr {}".format(self.pk)
@@ -77,7 +78,7 @@ class Ticket(models.Model):
     def clean(self):
         seats_taken = self.flight.get_booked_seats(self.pk)
         if seats_taken + self.count > self.flight.airplane.capacity:
-            raise ValidationError("Nie można zarezerwować biletu ze względu na brak miejsc")
+            raise ValidationError({"count": _("Nie można zarezerwować biletu ze względu na brak miejsc.")})
 
     class Meta:
         unique_together = ('passenger', 'flight')

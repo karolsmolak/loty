@@ -40,10 +40,9 @@
     </section>
     <section>
         <h4>Dodaj pasażera:</h4>
-        <form action={% url 'add_passenger' flight_id=flight.id %} method="post">
+        <form action={% url 'flight_details' flight_id=flight.id %} method="post">
             {% csrf_token %}
             {{ form.as_p }}
-
             <input type="submit" value="dodaj">
         </form>
     </section>

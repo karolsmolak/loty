@@ -4,7 +4,7 @@ from django.test import TestCase, RequestFactory
 from django.utils import timezone
 
 from .models import Flight, Airplane, Ticket
-from .views import add_passenger, flight_details
+from .views import FlightDetails
 
 
 class RequestsTest(TestCase):
@@ -30,26 +30,26 @@ class RequestsTest(TestCase):
     def test_get_flight_details_unknown_flight_id_should_raise_404(self):
         request = self.factory.get('details/99')
         with self.assertRaises(Http404):
-            flight_details(request, 99)
+            FlightDetails.as_view()(request, flight_id=99)
 
     def test_add_passenger_unknown_flight_id_should_raise_404(self):
-        request = self.factory.post('add_passenger/99')
+        request = self.factory.post('details/99')
         request.user = self.user
         request.POST = self.ticket_data
         with self.assertRaises(Http404):
-            add_passenger(request, 99)
+            FlightDetails.as_view()(request, flight_id=99)
 
     def test_add_passenger_unauthorized_shouldnt_book_ticket(self):
-        request = self.factory.post('add_passenger/1')
+        request = self.factory.post('details/1')
         request.user = AnonymousUser()
         request.POST = self.ticket_data
-        add_passenger(request, 1)
+        FlightDetails.as_view()(request, flight_id=1)
         self.assertFalse(Ticket.objects.filter(flight_id=1, count=self.ticket_data["count"]).exists())
 
     def test_valid_add_passenger_should_book_ticket(self):
-        request = self.factory.post('add_passenger/1')
+        request = self.factory.post('details/1')
         request.user = self.user
         request.POST = self.ticket_data
-        add_passenger(request, 1)
+        FlightDetails.as_view()(request, flight_id=1)
         self.assertTrue(Ticket.objects.filter(flight_id=1, count=self.ticket_data["count"]).exists())
 

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<a href={% url 'homepage' %}>Strona główna</a>
+{% if user.is_authenticated %}
+    <a href="{% url 'logout' %}?next={{request.path}}">Wyloguj</a>
+{% endif %}
+{% if flight %}
+    <h3>Lot nr {{ flight.id }}</h3>
+    <section>
+        <h4>Szczegółowe dane dotyczące lotu</h4>
+        <ul>
+            <li><strong>Z:</strong> {{ flight.start_airport }}</li>
+            <li><strong>Do:</strong> {{ flight.landing_airport }}</li>
+            <li><strong>Wylot:</strong> {{ flight.start }}</li>
+            <li><strong>Przylot</strong>: {{ flight.landing }}</li>
+            <li><strong>Zajętość miejsc:</strong> {{ seats_taken }} / {{ flight.airplane.capacity }}</li>
+            <li><strong>Samolot:</strong> {{ flight.airplane.registration_number }}</li>
+        </ul>
+    </section>
+    <section>
+        <h4>Pasażerowie:</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Imię</th>
+                    <th>Nazwisko</th>
+                    <th>Ilość biletów</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for passenger in passengers %}
+                <tr>
+                    <td>{{ passenger.name }}</td>
+                    <td>{{ passenger.surname }}</td>
+                    <td>{{ passenger.count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    <section>
+        <h4>Dodaj pasażera:</h4>
+        <form action={% url 'add_passenger' flight_id=flight.id %} method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <input type="submit" value="dodaj">
+        </form>
+    </section>
+{% endif %}
+{% endblock %}

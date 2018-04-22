@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form method="get">
+    {% csrf_token %}
+    {{ filter.as_ul }}
+    <input type="submit" value="filtruj">
+</form>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nr lotu</th>
+            <th>Z</th>
+            <th>Do</th>
+            <th>Wylot</th>
+            <th>Przylot</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for flight in flights %}
+        <tr onclick="window.location='{% url 'flight_details' flight_id=flight.id %}';" class="selectable">
+            <td>{{ flight.id }}</td>
+            <td>{{ flight.start_airport }}</td>
+            <td>{{ flight.landing_airport }}</td>
+            <td>{{ flight.start }}</td>
+            <td>{{ flight.landing }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

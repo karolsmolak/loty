@@ -1,0 +1,5 @@
+.selectable:hover {
+    color: white;
+    background-color: #4bb0ce;
+    cursor: pointer;
+}

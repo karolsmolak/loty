@@ -1,70 +1,60 @@
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.db.models import F
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render
 from django.utils.decorators import method_decorator
-from django.views import View
+from django.views.generic import DetailView, ListView
 
-from .forms import PassengerForm, DateFilter
-from .models import Flight, Passenger, Ticket
-
-
-def index(request):
-    flights = list(Flight.objects.values())
-    form = DateFilter(request.GET)
-    if form.is_valid():
-        flights = list(Flight.objects.filter(start__date=form.cleaned_data['date']).values())
-        return render(request, 'homepage.html', {'flights': flights,
-                                                 'filter': DateFilter(),
-                                                 'date': form.cleaned_data['date']})
-    return render(request, 'homepage.html', {'flights': flights,
-                                             'filter': DateFilter()})
+from .forms import DateFilter, TicketForm
+from .models import Flight
 
 
-class FlightDetails(View):
+class FlightList(ListView):
+    template_name = 'homepage.html'
+    model = Flight
+    context_object_name = 'flights'
 
-    def render_detail_page(self, request, flight_id, form=None):
-        if not form:
-            form = PassengerForm()
-        flight = get_object_or_404(Flight, pk=flight_id)
-        seats_taken = flight.get_booked_seats(except_for=None)
-        flights = list(Flight.objects.values())
-        passengers = flight.ticket_set.values('count',
-                                              name=F('passenger__name'),
-                                              surname=F('passenger__surname')).all()
-        return render(request, 'details.html', {'form': form,
-                                                'flights': flights,
-                                                'flight': flight,
-                                                'seats_taken': seats_taken,
-                                                'passengers': passengers})
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = DateFilter(self.request.GET)
+        if form.is_valid():
+            context['form'] = form
+        else:
+            context['form'] = DateFilter()
+        return context
 
-    def get(self, request, flight_id):
-        return self.render_detail_page(request, flight_id)
+    def get_queryset(self):
+        form = DateFilter(self.request.GET)
+        if form.is_valid():
+            date = form.cleaned_data['date']
+            return Flight.objects.filter(start__date=date)
+        return Flight.objects.all()
+
+
+class FlightDetails(DetailView):
+    model = Flight
+    template_name = 'details.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = TicketForm()
+        flight = self.get_object()
+        context['flight'] = flight
+        context['seats_taken'] = flight.get_booked_seats(except_for=None)
+        context['passengers'] = flight.ticket_set.values('count',
+                                                         name=F('passenger__name'),
+                                                         surname=F('passenger__surname')).all()
+        return context
 
     @method_decorator(login_required)
-    def post(self, request, flight_id):
-        form = PassengerForm(request.POST)
+    def post(self, request, pk):
+        self.object = self.get_object()
+        form = TicketForm(request.POST)
         if form.is_valid():
-            flight = get_object_or_404(Flight, pk=flight_id)
-            with transaction.atomic():
-                passenger, created = Passenger.objects.get_or_create(name=form.cleaned_data['name'],
-                                                                     surname=form.cleaned_data['surname'])
-                ticket = Ticket.objects.filter(flight=flight).select_for_update().filter(passenger=passenger).first()
-                if ticket:
-                    ticket.count += form.cleaned_data['count']
-                    ticket.save(update_fields=['count'])
-                else:
-                    ticket = Ticket.objects.create(passenger=passenger, flight=flight,
-                                                   count=form.cleaned_data['count'])
-                try:
-                    ticket.full_clean()
-                except ValidationError as exception:
-                    transaction.set_rollback(True)
-                    form.add_error("count", exception.message_dict["count"])
-        return self.render_detail_page(request, flight_id, form)
+            form.book_ticket(flight=self.object)
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context=context)
 
 
 def logout_page(request):

@@ -49,6 +49,11 @@ class FlightValidationTest(TestCase):
                     self.create_flight(start=advance_date(self.date, hours=5 * i),
                                        landing=advance_date(self.date, hours=5 * i + 1))
 
+    def test_add_more_than_4_flights_per_airplane_not_same_day_shouldnt_fail(self):
+        for i in range(0, 10):
+            self.create_flight(start=advance_date(self.date, hours=7 * i),
+                               landing=advance_date(self.date, hours=7 * i + 1))
+
     def test_assigning_airplane_to_two_simultaneous_flights_should_fail(self):
         self.create_flight(start=self.date,
                            landing=advance_date(self.date, minutes=60))

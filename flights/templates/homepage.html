@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<form method="get">
-    {% csrf_token %}
-    {{ filter.as_ul }}
-    <input type="submit" value="filtruj">
+<form action="" method="get" class="filter-form">
+    {{ form }}
+    <input type="submit" value="Szukaj" />
+    <a class="reset-form" href="{% url 'homepage' %}">Wyczyść filtr</a>
 </form>
+
 <table class="table">
     <thead>
         <tr>
@@ -18,7 +19,7 @@
     </thead>
     <tbody>
         {% for flight in flights %}
-        <tr onclick="window.location='{% url 'flight_details' flight_id=flight.id %}';" class="selectable">
+        <tr onclick="window.location='{{ flight.get_absolute_url }}';" class="selectable">
             <td>{{ flight.id }}</td>
             <td>{{ flight.start_airport }}</td>
             <td>{{ flight.landing_airport }}</td>

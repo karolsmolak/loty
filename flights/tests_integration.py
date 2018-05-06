@@ -30,26 +30,25 @@ class RequestsTest(TestCase):
     def test_get_flight_details_unknown_flight_id_should_raise_404(self):
         request = self.factory.get('details/99')
         with self.assertRaises(Http404):
-            FlightDetails.as_view()(request, flight_id=99)
+            FlightDetails.as_view()(request, pk=99)
 
     def test_add_passenger_unknown_flight_id_should_raise_404(self):
         request = self.factory.post('details/99')
         request.user = self.user
         request.POST = self.ticket_data
         with self.assertRaises(Http404):
-            FlightDetails.as_view()(request, flight_id=99)
+            FlightDetails.as_view()(request, pk=99)
 
     def test_add_passenger_unauthorized_shouldnt_book_ticket(self):
         request = self.factory.post('details/1')
         request.user = AnonymousUser()
         request.POST = self.ticket_data
-        FlightDetails.as_view()(request, flight_id=1)
+        FlightDetails.as_view()(request, pk=1)
         self.assertFalse(Ticket.objects.filter(flight_id=1, count=self.ticket_data["count"]).exists())
 
     def test_valid_add_passenger_should_book_ticket(self):
         request = self.factory.post('details/1')
         request.user = self.user
         request.POST = self.ticket_data
-        FlightDetails.as_view()(request, flight_id=1)
+        FlightDetails.as_view()(request, pk=1)
         self.assertTrue(Ticket.objects.filter(flight_id=1, count=self.ticket_data["count"]).exists())
-

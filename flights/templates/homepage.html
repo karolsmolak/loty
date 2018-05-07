@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<form action="" method="get" class="filter-form">
-    {{ form }}
+<form method="get" class="filter-form">
+    {{ form.as_p }}
     <input type="submit" value="Szukaj" />
     <a class="reset-form" href="{% url 'homepage' %}">Wyczyść filtr</a>
 </form>

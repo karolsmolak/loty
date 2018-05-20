@@ -1,0 +1,47 @@
+.container-fluid {
+    margin: 0;
+    padding: 0;
+}
+
+.users {
+    position: absolute;
+    top: 0.5em;
+    right: 2em;
+}
+
+nav {
+    margin: 0;
+    padding: 0;
+    height: 5.5em;
+    display: flex;
+}
+
+.credentials_input {
+    border-radius: 0;
+    margin: 0.5em;
+    height: 1.5em;
+    width: 10em;
+    display: block;
+}
+
+form {
+    display: flex;
+    align-items: center;
+}
+
+.formbtn {
+    margin-left: 0.5em;
+}
+
+.logged_user_wrapper {
+    margin-top: 1.1em;
+}
+
+#username {
+    color: white;
+}
+
+#worker_list {
+    max-height: 30em;
+    overflow-y: scroll;
+}

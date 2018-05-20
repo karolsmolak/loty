@@ -5,6 +5,8 @@ from django.db.models import Sum
 from django.urls import reverse
 from django.utils import timezone
 
+from crews.models import Crew
+
 
 class Passenger(models.Model):
     name = models.CharField(max_length=30)
@@ -36,10 +38,15 @@ class Flight(models.Model):
     landing_airport = models.CharField(max_length=30)
     airplane = models.ForeignKey(Airplane, on_delete=models.CASCADE, related_name="flights")
     passengers = models.ManyToManyField(Passenger, related_name="flights", through='Ticket')
+    crew = models.ForeignKey(Crew, related_name='flights', on_delete=models.CASCADE);
 
     @property
     def duration(self):
         return self.landing - self.start
+
+    @property
+    def booked_seats(self):
+        return self.get_booked_seats(None)
 
     class Meta:
         ordering = ['start']
@@ -51,10 +58,17 @@ class Flight(models.Model):
     def get_absolute_url(self):
         return reverse('flight_details', args=[str(self.pk)])
 
+    def get_concurrent_flights(self):
+        return (Flight.objects.filter(start__gte=self.start,
+                                      landing__lte=self.start) |
+                Flight.objects.filter(start__lte=self.start,
+                                      landing__gte=self.start)).exclude(pk=self.pk)
+
     def clean(self):
         self.check_if_flight_has_minimum_duration()
         self.check_if_airplane_not_already_assigned()
         self.check_airplane_not_too_much_flights_per_day()
+        self.check_crew_members_not_already_assigned()
         super().clean()
 
     def check_if_flight_has_minimum_duration(self):
@@ -62,20 +76,26 @@ class Flight(models.Model):
             raise ValidationError("Lot nie może trwać < 30 minut")
 
     def check_if_airplane_not_already_assigned(self):
-        if self.airplane.flights.filter(start__gte=self.start,
-                                        landing__lte=self.start).count() > 1 or \
-           self.airplane.flights.filter(start__lte=self.start,
-                                        landing__gte=self.start).count() > 1:
+        if self.get_concurrent_flights().filter(airplane=self.airplane).exists():
             raise ValidationError("Samolot nie może obsługiwać jednocześnie dwóch lotów")
 
     def check_airplane_not_too_much_flights_per_day(self):
         day = timezone.timedelta(days=1)
         flights = list(self.airplane.flights.filter(start__gte=self.start - day,
-                                                    start__lte=self.start + day))
-        if len(flights) > 4:
-            for i in range(0, len(flights) - 4):
-                if flights[i + 4].start - flights[i].start < day:
+                                                    start__lte=self.start + day)
+                       .exclude(pk=self.pk))
+        if len(flights) >= 4:
+            for i in range(0, len(flights) - 3):
+                if flights[i + 3].start - flights[i].start < day:
                     raise ValidationError("Samolot może mieć co najwyżej 4 loty dziennie")
+
+    def check_crew_members_not_already_assigned(self):
+        concurrent_flights = self.get_concurrent_flights()
+        for worker in self.crew.workers.all():
+            for flight in concurrent_flights:
+                if worker in flight.crew.workers.all():
+                    raise ValidationError("Członek załogi nie może być jednocześnie na dwóch lotach")
+
 
     def __str__(self):
         return "Lot nr {}".format(self.pk)

@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
+from crews.models import Crew, Worker
 from .models import Flight, Airplane, Ticket, Passenger
 
 
@@ -15,11 +16,15 @@ class FlightValidationTest(TestCase):
                                      landing=landing,
                                      airplane=self.airplane,
                                      start_airport="start",
-                                     landing_airport="finish").full_clean()
+                                     landing_airport="finish",
+                                     crew=self.crew).full_clean()
 
     def setUp(self):
         self.date = timezone.now()
         self.airplane = Airplane.objects.create(registration_number="samolocik", capacity=40)
+        worker = Worker.objects.create(name="a", surname="b")
+        self.crew = Crew.objects.create(captain=worker)
+        self.crew.workers.add(worker)
 
     def test_creating_airplane_with_at_least_20_seats_shouldnt_fail(self):
         Airplane.objects.create(registration_number="big enough airplane",
@@ -68,10 +73,13 @@ class TicketValidationTest(TestCase):
                                      landing=landing,
                                      airplane=self.airplane,
                                      start_airport="start",
-                                     landing_airport="finish")
+                                     landing_airport="finish",
+                                     crew=self.crew)
 
     def setUp(self):
-        self.date = timezone.now()
+        worker = Worker.objects.create(name="a", surname="b")
+        self.crew = Crew.objects.create(captain=worker)
+        self.crew.workers.add(worker)
         self.airplane = Airplane.objects.create(registration_number="samolocik",
                                                 capacity=20)
         self.flight = self.create_flight(timezone.now(), timezone.now())

@@ -17,11 +17,15 @@ from django.contrib import admin
 from django.urls import path
 from django.conf.urls import include
 from django.contrib.auth import views as auth_views
+from django.views.generic import RedirectView
+
 from flights.views import logout_page
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('flights.urls')),
+    path('api/', include('api.urls')),
+    path('crews/', RedirectView.as_view(permanent=False, url='/static/crews.html'), name='crews'),
     path('accounts/login/', auth_views.LoginView.as_view(), name='login'),
     path('accounts/logout/', logout_page, name='logout')
 ]

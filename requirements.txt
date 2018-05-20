@@ -1,2 +1,4 @@
 Django==2.0.5
 pytz==2018.4
+django-rest-framework
+djangorestframework-jwt

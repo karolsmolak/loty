@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Załogi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular-animate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular-cookies.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+    <script src="js/script.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/crew_style.css">
+</head>
+<body ng-app="crews">
+<div class="container-fluid">
+    <nav class="navbar navbar-expand-sm bg-secondary navbar-dark">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" href="/">Strona główna</a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="#">Załogi</a>
+            </li>
+        </ul>
+        <div class="users" ng-controller="user_controller">
+            <div ng-hide="logged">
+                <form>
+                    <fieldset>
+                        <input class="credentials_input" type="text" ng-model="$parent.login_form.username" placeholder="login">
+                        <input class="credentials_input" type="password" ng-model="$parent.login_form.password" placeholder="hasło">
+                    </fieldset>
+                    <button id="loginbtn" class="formbtn btn btn-sm" ng-click="login()">Zaloguj się</button>
+                </form>
+            </div>
+            <div class="logged_user_wrapper" ng-show="logged">
+                <span id="username">Zalogowany jako {{ username }} </span>
+                <button class="formbtn btn btn-sm" ng-click="logout()">Wyloguj się</button>
+            </div>
+        </div>
+    </nav>
+    <main class="container" ng-controller="flight_controller">
+        <div class="row">
+        <div class="col-md-3">
+            Podaj numer lotu:
+            <input type="text" ng-model="flight_id">
+            <button id="search" class="btn" ng-click="load_flight(flight_id)">szukaj</button>
+        </div>
+        <div class="col-md-4" ng-if="flight">
+            <section>
+                <h2>Lot nr {{ flight.id }}</h2>
+                <ul>
+                    <li><strong>Z:</strong> {{ flight.start_airport }}</li>
+                    <li><strong>Do:</strong> {{ flight.landing_airport }}</li>
+                    <li><strong>Wylot:</strong> {{ flight.start | date:'yyyy-MM-dd HH:mm:ss' }}</li>
+                    <li><strong>Przylot</strong>: {{ flight.landing | date:'yyyy-MM-dd HH:mm:ss' }}</li>
+                    <li><strong>Zajętość miejsc:</strong> {{ flight.booked_seats }} / {{ flight.airplane.capacity }}</li>
+                    <li><strong>Samolot:</strong> {{ flight.airplane.registration_number }}</li>
+                </ul>
+            </section>
+        </div>
+        <section class="col-md-5" ng-if="flight">
+            <h2>Załoga lotu</h2>
+            <h4>Kapitan: {{ flight.crew.captain.name + " " + flight.crew.captain.surname + " (id: " + flight.crew.captain.id + ")"}}</h4>
+            <h4>Skład załogi:</h4>
+            <ul id="worker_list">
+                <li ng-repeat="worker in flight.crew.workers">
+                    {{ worker.name + " " + worker.surname + " (id: " + worker.id + ")" }}
+                    <div ng-show="logged">
+                        <button ng-click="remove_worker(worker.id)">Usuń</button>
+                        <button ng-click="make_captain(worker.id)">Kapitan</button>
+                    </div>
+                </li>
+            </ul>
+            <div ng-show="logged">
+            <select ng-options="worker as worker.name + ' ' + worker.surname for worker in workers" ng-model="$parent.new_worker">
+            </select>
+            <button type="button" ng-click="add_worker()">Dodaj</button>
+            </div>
+            <div ng-hide="logged">
+                Zaloguj się by edytować załogę
+            </div>
+        </section>
+        </div>
+    </main>
+</div>
+</body>
+</html>

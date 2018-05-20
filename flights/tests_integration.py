@@ -3,6 +3,7 @@ from django.http import Http404
 from django.test import TestCase, RequestFactory
 from django.utils import timezone
 
+from crews.models import Crew, Worker
 from .models import Flight, Airplane, Ticket
 from .views import FlightDetails
 
@@ -10,6 +11,9 @@ from .views import FlightDetails
 class RequestsTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
+        worker = Worker.objects.create(name="a", surname="b")
+        crew = Crew.objects.create(captain=worker)
+        crew.workers.add(worker)
         self.ticket_data = {
             "name": "passenger_name",
             "surname": "passenger_surname",
@@ -25,7 +29,8 @@ class RequestsTest(TestCase):
                               airplane=Airplane.objects.create(registration_number="airplane",
                                                                capacity=20),
                               start_airport="start",
-                              landing_airport="landing")
+                              landing_airport="landing",
+                              crew=crew)
 
     def test_get_flight_details_unknown_flight_id_should_raise_404(self):
         request = self.factory.get('details/99')

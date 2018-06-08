@@ -15,6 +15,7 @@ def get_crew_worker_url(flight, worker):
         'worker_id': worker.pk
     })
 
+
 def get_flight_url(flight):
     return '/api/flights/{}'.format(flight.pk)
 
@@ -34,17 +35,17 @@ class ApiTests(APITestCase):
         self.crew1 = Crew.objects.create(captain=self.worker4)
         self.crew1.workers.add(self.worker4)
         self.flight1 = Flight.objects.create(crew=self.crew,
-                                            start=timezone.now(),
-                                            landing=timezone.now() + timezone.timedelta(hours=1),
-                                            start_airport="start",
-                                            landing_airport="finish",
-                                            airplane=airplane1)
+                                             start=timezone.now(),
+                                             landing=timezone.now() + timezone.timedelta(hours=1),
+                                             start_airport="start",
+                                             landing_airport="finish",
+                                             airplane=airplane1)
         self.flight2 = Flight.objects.create(crew=self.crew1,
-                                            start=timezone.now(),
-                                            landing=timezone.now() + timezone.timedelta(hours=1),
-                                            start_airport="start",
-                                            landing_airport="finish",
-                                            airplane=airplane2)
+                                             start=timezone.now(),
+                                             landing=timezone.now() + timezone.timedelta(hours=1),
+                                             start_airport="start",
+                                             landing_airport="finish",
+                                             airplane=airplane2)
 
     def test_delete_crew_member(self):
         self.client.force_authenticate(self.user)

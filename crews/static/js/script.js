@@ -1,19 +1,59 @@
-let host_url = 'http://localhost:8000';
+let host_url = "http://" + window.location.host;
 
-var app = angular.module('crews', ['ngCookies', 'ngAnimate']);
+var app = angular.module('crews', ['ngAnimate', 'ngStorage']);
 
 app.config(function ($httpProvider) {
     $httpProvider.defaults.xsrfCookieName = 'csrftoken';
     $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
 });
 
+let show_popover = function (id) {
+    let element = $("#" + id);
+    element.popover('show');
+    setTimeout(function () {
+        element.popover('hide');
+    }, 1900);
+}
 
-app.controller('user_controller', function ($scope, $rootScope, $http, $cookies) {
+app.controller('user_controller', function ($scope, $rootScope, $http, $localStorage) {
     $("#loginbtn").popover({
         content: "Upewnij się, że wprowadzone dane są poprawne.",
         placement: "bottom",
         trigger: "manual"
     });
+
+    $rootScope.logged = false;
+    $scope.username = $localStorage.username;
+
+    if ($scope.username) {
+        $rootScope.logged = true;
+        $http.defaults.headers.common.Authorization = 'JWT ' + $localStorage.token;
+    }
+
+    $scope.login = function() {
+        $http.post(host_url + '/api/obtain-token', $scope.login_form).then(
+            function success(response) {
+                $localStorage.token = response.data['token'];
+                $localStorage.username = $scope.login_form.username;
+                $http.defaults.headers.common.Authorization = 'JWT ' + $localStorage.token;
+                $rootScope.logged = true;
+                $scope.username = $scope.login_form.username;
+            }, function failure(response) {
+                show_popover("loginbtn");
+            });
+    };
+
+    $scope.logout = function() {
+        $rootScope.logged = false;
+        delete $localStorage.token;
+        delete $localStorage.username;
+    };
+});
+
+app.controller('flight_controller', function ($scope, $http) {
+    let get_flight_url = function (flight_id) {
+        return host_url + '/api/flights/' + flight_id;
+    };
 
     $("#search").popover({
         content: "Brak lotu o podanym numerze.",
@@ -21,69 +61,29 @@ app.controller('user_controller', function ($scope, $rootScope, $http, $cookies)
         trigger: "manual"
     });
 
-    $scope.username = $cookies.get("username");
-    $rootScope.logged = false;
-
-    if ($scope.username) {
-        $rootScope.logged = true;
-        $http.defaults.headers.common.Authorization = 'JWT ' + $cookies.get("token");
-    }
-
-    $scope.login = function() {
-        $http.post(host_url + '/api/obtain-token', $scope.login_form).then(
-            function success(response) {
-                $cookies.put('token', response.data['token']);
-                $cookies.put('username', $scope.login_form.username);
-                $http.defaults.headers.common.Authorization = 'JWT ' + $cookies.get("token");
-                $rootScope.logged = true;
-                $scope.username = $scope.login_form.username;
-            }, function failure(response) {
-                $("#loginbtn").popover('show');
-                setTimeout(function () {
-                    $("#loginbtn").popover('hide');
-                }, 1900);
-            });
-    };
-
-    $scope.logout = function() {
-        $rootScope.logged = false;
-        $cookies.remove('token');
-        $cookies.remove('username');
-    };
-});
-
-app.controller('flight_controller', function ($scope, $http, $cookies) {
-    let get_flight_url = function (flight_id) {
-        return host_url + '/api/flights/' + flight_id;
-    }
-
     $scope.load_workers = function() {
         $http.get(host_url + '/api/workers').then(function (response) {
             $scope.workers = response.data;
-        })
-
-    }
+        });
+    };
 
     $scope.load_workers();
 
     $scope.load_flight = function(flight_id) {
         $http.get(get_flight_url(flight_id))
-             .then(function success(response) {
-                 $scope.flight = response.data;
-             }, function failure(response) {
-                $("#search").popover('show');
-                setTimeout(function () {
-                    $("#search").popover('hide');
-                }, 1900);
-             });
+        .then(function success(response) {
+            $scope.flight = response.data;
+            delete $scope.errors;
+        }, function failure(response) {
+            show_popover("search");
+        });
     };
 
     $scope.remove_worker = function (worker_id) {
          $http.delete(get_flight_url($scope.flight.id) + '/crew/' + worker_id)
          .then(function success(response) {
              $scope.load_flight($scope.flight.id);
-         }, function failure(response) {
-            console.log("failure");
+             delete $scope.errors;
          });
     };
 
@@ -91,17 +91,20 @@ app.controller('flight_controller', function ($scope, $http, $cookies) {
         $http.post(get_flight_url($scope.flight.id) + '/crew/' + $scope.new_worker.id)
         .then(function success(response) {
             $scope.load_flight($scope.flight.id);
+            delete $scope.errors;
         }, function failure(response) {
-            console.log("failure");
+            $scope.errors = response.data['error'];
+            console.log($scope.errors);
         });
     };
 
     $scope.make_captain = function (worker_id) {
-     $http.put(get_flight_url($scope.flight.id) + '/crew/' + worker_id)
-     .then(function success(response) {
-         $scope.load_flight($scope.flight.id);
-     }, function failure(response) {
+        $http.put(get_flight_url($scope.flight.id) + '/crew/' + worker_id)
+        .then(function success(response) {
+            $scope.load_flight($scope.flight.id);
+            delete $scope.errors;
+        }, function failure(response) {
 
-     });
+        });
     };
 });

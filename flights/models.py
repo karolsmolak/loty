@@ -60,7 +60,7 @@ class Flight(models.Model):
 
     def get_concurrent_flights(self):
         return (Flight.objects.filter(start__gte=self.start,
-                                      landing__lte=self.start) |
+                                      start__lte=self.landing) |
                 Flight.objects.filter(start__lte=self.start,
                                       landing__gte=self.start)).exclude(pk=self.pk)
 
@@ -68,7 +68,6 @@ class Flight(models.Model):
         self.check_if_flight_has_minimum_duration()
         self.check_if_airplane_not_already_assigned()
         self.check_airplane_not_too_much_flights_per_day()
-        self.check_crew_members_not_already_assigned()
         super().clean()
 
     def check_if_flight_has_minimum_duration(self):
@@ -88,14 +87,6 @@ class Flight(models.Model):
             for i in range(0, len(flights) - 3):
                 if flights[i + 3].start - flights[i].start < day:
                     raise ValidationError("Samolot może mieć co najwyżej 4 loty dziennie")
-
-    def check_crew_members_not_already_assigned(self):
-        concurrent_flights = self.get_concurrent_flights()
-        for worker in self.crew.workers.all():
-            for flight in concurrent_flights:
-                if worker in flight.crew.workers.all():
-                    raise ValidationError("Członek załogi nie może być jednocześnie na dwóch lotach")
-
 
     def __str__(self):
         return "Lot nr {}".format(self.pk)
@@ -117,4 +108,4 @@ class Ticket(models.Model):
         ordering = ['passenger']
 
     def __str__(self):
-        return "{}, {} - {} miejsc".format(str(self.passenger), str(self.flight), self.count)
+        return "{}, {} - {} miejsc".format(self.passenger, self.flight, self.count)

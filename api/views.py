@@ -1,8 +1,11 @@
 # Create your views here.
+import json
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -15,9 +18,11 @@ class FlightViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Flight.objects.all()
     serializer_class = FlightSerializer
 
+
 class WorkersViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Worker.objects.all()
     serializer_class = WorkerSerializer
+
 
 class CrewView(APIView):
     """
@@ -41,10 +46,10 @@ class CrewView(APIView):
             return Response(status=status.HTTP_409_CONFLICT)
         flight.crew.workers.add(worker)
         try:
-            flight.full_clean()
-        except ValidationError:
+            flight.crew.full_clean()
+        except ValidationError as e:
             transaction.set_rollback(True)
-            return Response(status=status.HTTP_409_CONFLICT)
+            return Response(data={"error" : e.error_dict['__all__'][0].message}, status=status.HTTP_409_CONFLICT)
         return Response(status=status.HTTP_200_OK)
 
     def delete(self, request, flight_id, worker_id):
@@ -53,6 +58,7 @@ class CrewView(APIView):
         if flight.crew.captain == worker:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         flight.crew.workers.remove(worker)
+        flight.crew.save()
         return Response(status=status.HTTP_200_OK)
 
     def put(self, request, flight_id, worker_id):

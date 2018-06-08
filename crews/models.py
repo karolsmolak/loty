@@ -1,5 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import F
+
 
 class Worker(models.Model):
     name = models.CharField(max_length=50)
@@ -19,6 +21,10 @@ class Crew(models.Model):
     def clean(self):
         if self.captain not in self.workers.all():
             raise ValidationError("Captain must be in workers")
+        for flight in self.flights.all():
+            for concurrent_flight in flight.get_concurrent_flights():
+                if (flight.crew.workers.all() & concurrent_flight.crew.workers.all()).exists():
+                    raise ValidationError("Członek załogi nie może być jednocześnie na dwóch lotach: {} i {}".format(flight.pk, concurrent_flight.pk))
         super().clean()
 
     def __str__(self):

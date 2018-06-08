@@ -10,6 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular-animate.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular-cookies.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ngStorage/0.3.10/ngStorage.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
     <script src="js/script.js"></script>
     <link rel="stylesheet" type="text/css" href="css/crew_style.css">
@@ -75,9 +76,10 @@
                 </li>
             </ul>
             <div ng-show="logged">
-            <select ng-options="worker as worker.name + ' ' + worker.surname for worker in workers" ng-model="$parent.new_worker">
-            </select>
-            <button type="button" ng-click="add_worker()">Dodaj</button>
+                <select ng-options="worker as worker.name + ' ' + worker.surname + ' (id: ' + worker.id + ')' for worker in workers" ng-model="$parent.new_worker">
+                </select>
+                <button id="addworker" type="button" ng-click="add_worker()">Dodaj</button>
+                <span id="errors">{{ $parent.errors }}</span>
             </div>
             <div ng-hide="logged">
                 Zaloguj się by edytować załogę

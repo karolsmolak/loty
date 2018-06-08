@@ -1,5 +1,5 @@
 Django==2.0.5
 pytz==2018.4
-django-rest-framework
-djangorestframework-jwt
-selenium
+django-rest-framework==0.1.0
+djangorestframework-jwt==1.11.0
+selenium==3.12.0

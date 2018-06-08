@@ -13,7 +13,7 @@ flights_per_airplane = 50
 min_seats = 20
 min_duration = 30
 max_day_flights_per_airplane = 4
-num_of_workers = 400
+num_of_workers = 250
 
 
 class Command(BaseCommand):
@@ -28,6 +28,7 @@ class Command(BaseCommand):
             airplane = Airplane.objects.create(registration_number="Samolot nr {}".format(i),
                                                capacity=random.randrange(min_seats, min_seats + 10))
             start_date = timezone.now()
+            flights = []
             for j in range(1, flights_per_airplane):
                 start, finish = random.sample(range(1, 10), 2)
                 landing_date = start_date + timezone.timedelta(minutes=min_duration + random.randrange(100))
@@ -40,8 +41,7 @@ class Command(BaseCommand):
                 available_workers = set(range(1, num_of_workers))
                 concurrent_flights = flight.get_concurrent_flights()
                 for concurrent_flight in concurrent_flights:
-                    for worker in concurrent_flight.crew.workers.all():
-                        available_workers.discard(worker.pk)
+                    available_workers.difference_update(concurrent_flight.crew.workers.values_list('id', flat=True))
 
                 worker_ids = random.sample(available_workers, 5)
                 captain = Worker.objects.get(pk=worker_ids[0])
@@ -49,8 +49,7 @@ class Command(BaseCommand):
                 for worker_id in worker_ids:
                     crew.workers.add(Worker.objects.get(pk=worker_id))
                 flight.crew = crew
-                flight.save()
-                crew.save()
-
+                flights.append(flight)
                 start_date = landing_date + timezone.timedelta(hours=24 / max_day_flights_per_airplane)
                 print("{}%\r".format(int((i * flights_per_airplane + j) / 25)), end='', flush=True)
+            Flight.objects.bulk_create(flights)

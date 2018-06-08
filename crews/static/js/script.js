@@ -94,7 +94,6 @@ app.controller('flight_controller', function ($scope, $http) {
             delete $scope.errors;
         }, function failure(response) {
             $scope.errors = response.data['error'];
-            console.log($scope.errors);
         });
     };
 

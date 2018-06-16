@@ -37,7 +37,6 @@ class ValidationTests(TestCase):
 
     def test_worker_simultinously_in_two_flights(self):
         self.crew1.workers.add(self.worker2)
-        self.crew1.full_clean()
         with self.assertRaises(ValidationError):
             self.crew2.workers.add(self.worker2)
             self.crew2.full_clean()

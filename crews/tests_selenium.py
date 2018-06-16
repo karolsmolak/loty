@@ -1,11 +1,9 @@
 import re
 import time
 
-from django import test
 from django.contrib.auth.models import User
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.utils import timezone
-from django.test import TestCase
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException
 from selenium.common.exceptions import NoSuchElementException

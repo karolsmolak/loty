@@ -31,7 +31,7 @@ app.controller('user_controller', function ($scope, $rootScope, $http, $localSto
     }
 
     $scope.login = function() {
-        $http.post(host_url + '/api/obtain-token', $scope.login_form).then(
+        $http.post(host_url + '/api/obtain-token/', $scope.login_form).then(
             function success(response) {
                 $localStorage.token = response.data['token'];
                 $localStorage.username = $scope.login_form.username;
@@ -62,7 +62,7 @@ app.controller('flight_controller', function ($scope, $http) {
     });
 
     $scope.load_workers = function() {
-        $http.get(host_url + '/api/workers').then(function (response) {
+        $http.get(host_url + '/api/workers/').then(function (response) {
             $scope.workers = response.data;
         });
     };
@@ -70,17 +70,21 @@ app.controller('flight_controller', function ($scope, $http) {
     $scope.load_workers();
 
     $scope.load_flight = function(flight_id) {
-        $http.get(get_flight_url(flight_id))
-        .then(function success(response) {
-            $scope.flight = response.data;
-            delete $scope.errors;
-        }, function failure(response) {
+        if (flight_id) {
+            $http.get(get_flight_url(flight_id) + '/')
+            .then(function success(response) {
+                $scope.flight = response.data;
+                delete $scope.errors;
+            }, function failure(response) {
+                show_popover("search");
+            });
+        } else {
             show_popover("search");
-        });
+        }
     };
 
     $scope.remove_worker = function (worker_id) {
-         $http.delete(get_flight_url($scope.flight.id) + '/crew/' + worker_id)
+         $http.delete(get_flight_url($scope.flight.id) + '/crew/' + worker_id + '/')
          .then(function success(response) {
              $scope.load_flight($scope.flight.id);
              delete $scope.errors;
@@ -88,7 +92,7 @@ app.controller('flight_controller', function ($scope, $http) {
     };
 
     $scope.add_worker = function () {
-        $http.post(get_flight_url($scope.flight.id) + '/crew/' + $scope.new_worker.id)
+        $http.post(get_flight_url($scope.flight.id) + '/crew/' + $scope.new_worker.id + '/')
         .then(function success(response) {
             $scope.load_flight($scope.flight.id);
             delete $scope.errors;
@@ -98,7 +102,7 @@ app.controller('flight_controller', function ($scope, $http) {
     };
 
     $scope.make_captain = function (worker_id) {
-        $http.put(get_flight_url($scope.flight.id) + '/crew/' + worker_id)
+        $http.put(get_flight_url($scope.flight.id) + '/crew/' + worker_id + '/')
         .then(function success(response) {
             $scope.load_flight($scope.flight.id);
             delete $scope.errors;

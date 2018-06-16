@@ -52,20 +52,30 @@ class CrewView(APIView):
             return Response(data={"error" : e.error_dict['__all__'][0].message}, status=status.HTTP_409_CONFLICT)
         return Response(status=status.HTTP_200_OK)
 
+    @transaction.atomic
     def delete(self, request, flight_id, worker_id):
         flight = get_object_or_404(Flight, pk=flight_id)
         worker = get_object_or_404(Worker, pk=worker_id)
         if flight.crew.captain == worker:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         flight.crew.workers.remove(worker)
-        flight.crew.save()
+        try:
+            flight.crew.full_clean()
+            flight.crew.save()
+        except ValidationError as e:
+            transaction.set_rollback(True)
         return Response(status=status.HTTP_200_OK)
 
+    @transaction.atomic
     def put(self, request, flight_id, worker_id):
         flight = get_object_or_404(Flight, pk=flight_id)
         worker = get_object_or_404(Worker, pk=worker_id)
         if not flight.crew.workers.filter(pk=worker.pk).exists():
             return Response(status=status.HTTP_404_NOT_FOUND)
         flight.crew.captain = worker
-        flight.crew.save()
+        try:
+            flight.crew.full_clean()
+            flight.crew.save()
+        except ValidationError as e:
+            transaction.set_rollback(True)
         return Response(status=status.HTTP_200_OK)
